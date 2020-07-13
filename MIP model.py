@@ -16,16 +16,17 @@ initial_data.LoadAllFile()
 I = ['PK-GLA', 'PK-GLE']
 D = initial_data.initial_flight_schedule_df['End Date'].unique() #calendar day indicator
 
-status_per_day_df = pd.DataFrame(columns = ['Date', 'Registration', 'FH', 'FC', 'FD'])
+status_per_day_df = pd.DataFrame(columns = ['Date', 'Registration', 'FH', 'FC', 'FD', 'Start Location', 'End Location', 'Stay Duration', 'Possible Maintenance Location'])
 
 FH = {}
 FC = {}
+FD = {}
 
 #Initial FH/FC
 for i in I:
     FH[i] = initial_data.aircraft_status_df.loc[i]['Initial FH']
     FC[i] = initial_data.aircraft_status_df.loc[i]['Initial FC']
-    
+    FD[i] = initial_data.aircraft_profile_df.loc[i]['Original C of A']
 
 #Scheduling
 for d in D:
@@ -35,42 +36,33 @@ for d in D:
         sum_schedule = schedule_aircraft_per_day.sum()
         FH[i] += sum_schedule['Util FH']
         FC[i] += sum_schedule['Util FC']
-        date_difference = pd.Timestamp(d) - initial_data.aircraft_profile_df.loc[i]['Original C of A']
-        status_per_day_df = status_per_day_df.append({'Date' : d, 'Registration' : i, 'FH' : FH[i], 'FC' : FC[i], 'FD' : date_difference.days  }, ignore_index=True) #PR untuk d: buat index di aircraft profile utk registrasi, dan update data FD untuk d - aircraft C of A
-        
-        #start location
-        #end location
-        #duration
-        #maint_location
+        FD[i] = pd.Timestamp(d) - initial_data.aircraft_profile_df.loc[i]['Original C of A']
+        start_loc[i] += sum_schedule['Start Loc']
+        end_loc[i] += sum_schedule['End Loc']
+        stay_duration[i] = sum_schedule['Duration']
+        possible_maint_loc[i] = sum_schedule['Maint Station']
+        status_per_day_df = status_per_day_df.append({'Date' : d, 'Registration' : i, 'FH' : FH[i], 'FC' : FC[i], 'FD' : FD[i].days, 'Start Location' : start_loc[i], 'End Location' : end_loc[i], 'Stay Duration' : stay_duration[i], 'Possible Maintenance Location' : possible_maint_loc[i]}, ignore_index=True)
         
    
 #print(status_per_day_df[status_per_day_df['Registration'] == 'PK-GLA'])
 
-#ASK: 
-    #DEFICIENCIES: 
-        #data loading for limitation, 
-        #maintenance interval
-        #maintenance status 31 Dec
-        #last maintenance status
-        #towing time
-        #effective slot
     
 def FormulaRuth(aircraft_profile, all_schedule, effective_slot, hangar_profile, initial_aircraft_status, interval_limitation, last_maintenance_status, maintenance_data, maintenance_interval, maintenance_status_31_Dec, towing_time):
      
     #Define index
-    i = aircraft_profile['Registration'] #i = index of aircraft registration
-    d = initial_data.initial_flight_schedule_df['End Date'].unique()
+    #i = index of aircraft registration
+    #d = index of calendar day
     #t = index of aircraft_profile
     #city = index of city
     #h = index of hangar
     #k = index of maintenance type check
-    #interval = index of interval type
+    #intv = index of interval type
     #d = index of calendar day
     #tk = index of aircraft type and maintenance type
     
     #Define sets
-    I = len(aircraft_profile['Registration']) #set of aircraft registration
-    N = len(aircraft_profile['Registration']) #set of aircraft registration
+    I = aircraft_profile['Registration'] #set of aircraft registration
+    N = len(aircraft_profile['Registration']) #number of aircraft fleet
     T = aircraft_profile['Type'].unique() #set of aircraft types
     dict_type_checks = {}
     hasil = Aircraft.Checks('type apa')
@@ -83,83 +75,47 @@ def FormulaRuth(aircraft_profile, all_schedule, effective_slot, hangar_profile, 
             dict_type_checks[unique_aircraft_type] = aircraft_check_codes
     CITY, H = hangar_profile['City','Hangar Code']  #sets of city and hangar code
     K = maintenance_data['Check1'] #set of maintenance type check
-    INTERVAL =  ['FH', 'FC', 'DY'] #set of interval types
-    D = len(initial_data.initial_flight_schedule_df['End Date'].unique()) #set of calendar day indicator
+    INTV =  ['FH', 'FC', 'DY'] #set of interval types
+    D = initial_data.initial_flight_schedule_df['End Date'].unique() #set of calendar day indicator
     F = all_schedule['Start Loc'] #set of node a
     G = all_schedule['End Loc'] #set of node b
     nc = sum(len(F) + len(G)) #set of nodes a and b
     TK = limitation['Checkpoint'] #sets of aircraft type_maint type
-    
-    #Initial FH/FC/DY (age) and location
-    age = {}
-    initial_FH = {}
-    initial_FC = {}
-    initial_location = {}
-    for registrasi_pesawat in I:
-        fh = initial_aircraft_status.loc[registrasi_pesawat]['Initial FH']
-    
-    for i in range(I):
-        initial_FH = initial_aircraft_status['Initial FH']
-        initial_FC = initial_aircraft_status['Initial FC']
-        age = datetime.datetime(2019, 1, 1) - aircraft_profile['Original C of A']
-        initial_location = initial_aircraft_status['Location']
-    
-    
-    #Scheduling, duration and duration of stay
-    #start loc and end loc
-    st = {}
-    et = {}
-    a = {}
-    b = {}
-    
-    D = 5
-    
-    util_FH = {}
-    for i in I:
-        for day in d:
-            on_day_schedule = all_schedule[all_schedule['Start Date'] == day]
-            
-            all_schedule['st'] = pd.to_datetime(all_schedule['Start Date'].apply(str)+' '+all_schedule['Chox off time'])
-            all_schedule['et'] = pd.to_datetime(all_schedule['End Date'].apply(str)+' '+all_schedule['Chox on time'])
-            a, b = all_schedule['Start Loc', 'End Loc']
-            idle_duration =  st - et
-            possible_maint_location = all_schedule['et']
-            
-            #util_FH[] = {}
-            #util_FH = INITIAL FH
-            util_FH = (int(idle_duration.days)*24*60) + int()
-    
-    util_FH = pd
-    util_FH = util_FH + initial_FH
-            
-            
-            
 
 
     #Define parameters
     #1, 2, 3. maximum FH/FC/DY tolerance of type k check interval of aircraft type  t(i)
-    limit_FH = {}
-    limit_FC = {}
-    limit_DY = {}
-    for tk in range (TK):
-        for index, row in limitation.iterrows():
-            limit_FH[row['Checkpoint']] = row['Limitation FH']
-            limit_FC[row['Checkpoint']] = row['Limitation FC']
-            limit_DY[row['Checkpoint']] = row['Limitation DY']
+    for i in I:
+        i = initial_data.aircraft_profile_df['Registration']
+        for t in T:
+            t[i] = initial_data.aircraft_profile_df['Type']
+            for k in K:
+                k[t][i] = initial_data.interval_limitation_df['Check1'] 
+                for intv in INTV:
+                    for index, row in limitation.iterrows():
+                    if initial_data.interval_limitation_df.row
+                    limit_FH[k][t][i] = initial_data.interval_limitation_df.row['Limitation FH']
+                    limit_FC[k][t][i] = initial_data.interval_limitation_df.row['Limitation FC']
+                    limit_DY[k][t][i] = initial_data.interval_limitation_df.row['Limitation DY']
     
-    #4, 5. average daily FH usage for aircraft i at day d
-    avg_utilization_FH = {}
-    avg_utilization_FC = {}
-    for i in range (N):
-        for index, row in aircraft_profile.iterrows():
-            avg_utilization_FH['Registration'] = row['Avg FH']
-            avg_utilization_FC['Registration'] = row['Avg FC']
+    #4, 5. average daily FH and FC usage for aircraft i at day d
+    #avg_utilization_FH = {}
+    #avg_utilization_FC = {}
+    for i in I:
+        for d in D:
+            for index, row in aircraft_profile.iterrows():
+                avg_utilization_FH[i] = initial_data.aircraft_profile_df.row['Avg FH']
+                avg_utilization_FC[i] = initial_data.aircraft_profile_df.row['Avg FC']
     
     #6, 7, 8. interval of type k check of aircraft type  t(i) in terms of FH/FC/DY
-    for unique_aircraft_types in range(T):
-        for k in range(K):
-            for interval in range(INTERVAL) :
-                tkint = maintenance_interval['Interval Checkpoint', 'Value']
+    for i in I:
+        i = initial_data.aircraft_profile_df['Registration']
+        for t in T:
+            t[i] = initial_data.aircraft_profile_df['Type']
+            for k in K:
+                k[t][i] = initial_data.maintenance_interval_df['Check1']
+                for intv in INTV:
+                    interval_check[intv][k][t][i] = initial_data.maintenance_interval_df['FH Value']
     
     
     #9 hangar capacity
@@ -193,17 +149,42 @@ def FormulaRuth(aircraft_profile, all_schedule, effective_slot, hangar_profile, 
             hangar_cap_nov['Unique Code'] = row['November']
             hangar_cap_dec['Unique Code'] = row['December']
     
-       
-
-    #XX. Initial FH and FC for aircraft i
     
-     
+    #Status per day
+    status_per_day_df = pd.DataFrame(columns = ['Date', 'Registration', 'FH', 'FC', 'FD', 'Start Location', 'End Location', 'Stay Duration', 'Possible Maintenance Location'])
+    
+    FH = {}
+    FC = {}
+    FD = {}
+    
+    #Initial FH/FC/FD
+    for i in I:
+        FH[i] = initial_data.aircraft_status_df.loc[i]['Initial FH']
+        FC[i] = initial_data.aircraft_status_df.loc[i]['Initial FC']
+        FD[i] = initial_data.aircraft_profile_df.loc[i]['Original C of A']
+    
+    
+    #Scheduling
+    for d in D:
+        one_day_schedule = initial_data.initial_flight_schedule_df[initial_data.initial_flight_schedule_df['End Date'] == d]
+        for i in I:
+        schedule_aircraft_per_day = one_day_schedule[one_day_schedule['Registration'] == i]
+        sum_schedule = schedule_aircraft_per_day.sum()
+        FH[i] += sum_schedule['Util FH']
+        FC[i] += sum_schedule['Util FC']
+        FD[i] = pd.Timestamp(d) - initial_data.aircraft_profile_df.loc[i]['Original C of A']
+        start_loc[i] += sum_schedule['Start Loc']
+        end_loc[i] += sum_schedule['End Loc']
+        stay_duration[i] = sum_schedule['Duration']
+        possible_maint_loc[i] = sum_schedule['Maint Station']
+        status_per_day_df = status_per_day_df.append({'Date' : d, 'Registration' : i, 'FH' : FH[i], 'FC' : FC[i], 'FD' : FD[i].days, 'Start Location' : start_loc[i], 'End Location' : end_loc[i], 'Stay Duration' : stay_duration[i], 'Possible Maintenance Location' : possible_maint_loc[i]}, ignore_index=True)
         
+   
+#print(status_per_day_df[status_per_day_df['Registration'] == 'PK-GLA'])
     
-  
-    #  for i in I:
-   #     for t in T:
-      #  max_dy_tolerance
+    #Last Maint Status
+    #MOP --> CONTOHNYA A-1
+    #BUAT TABEL MOP - LAST MAINTENANCE
     
     
     #Define the model

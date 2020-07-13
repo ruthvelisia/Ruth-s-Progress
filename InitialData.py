@@ -35,6 +35,7 @@ class InitialData:
         for index in range(len(self.hangar_profile_df.columns)-(sizeColoumnIndex+1)):
             currentIndex = sizeColoumnIndex + index + 1
             self.hangar_profile_df[self.hangar_profile_df.columns[currentIndex]] = self.hangar_profile_df[self.hangar_profile_df.columns[currentIndex]].astype('float64')  > 0
+        self.hangar_profile_df = self.hangar_profile_df.set_index('Hangar Code')
         #print(self.hangar_profile_df.head())
         
     def LoadAircraftStatusData(self):
@@ -47,7 +48,7 @@ class InitialData:
     def LoadAircrafProfile(self):
         self.aircraft_profile_df = pd.read_excel("Data/Aircraft Profile.xlsx", index_col = 0, parse_dates=['Original C of A'])
         self.aircraft_profile_df = self.aircraft_profile_df.drop(['Remark', 'Delivery Date'], axis = 1)
-        self.aircraft_profile_df.columns = ['Type', 'Company', 'Size', 'Registration', 'Original C of A', 'Avg FH', 'Avg FC']
+        self.aircraft_profile_df.columns = ['Registration', 'Type', 'Company', 'Size', 'Original C of A', 'Avg FH', 'Avg FC']
         self.aircraft_profile_df = self.aircraft_profile_df.set_index('Registration')
         #print(self.aircraft_profile_df)
         
@@ -75,20 +76,30 @@ class InitialData:
     
     def LoadIntervalLimitation(self):
         self.interval_limitation_df = pd.read_excel("Data/Initial Data.xlsx", sheetname="5. Limitation", index_col=0)
-        self.interval_limitation_df = self.interval_limitation_df.drop['Interval FH', 'Interval DY', 'Interval FC']
+        self.interval_limitation_df = self.interval_limitation_df.drop['Interval']
         self.interval_limitation_df = self.interval_limitation_df.set_index('Checkpoint')
+        #ASK: Gimana caranya buat index dari 3 kolom?
         #print(self.interval_limitation_df.head())
         
         
-    #def LoadMaintenanceInterval(self):    
+    def LoadMaintenanceInterval(self):
+        self.maintenance_interval_df = pd.read_excel("Data/Initial Data.xlsx", sheetname="9. MaintInt", index_col=0)
+        self.maintenance_interval_df = self.maintenance_interval_df['As of MPD', 'Issued Date', 'Remark']
+        self.maintenance_interval_df = self.maintenance_interval_df.set_index('Interval Checkpoint')
+        #ASK: Gimana caranya buat index dari 3 kolom?
+        #print(self.maintenance_interval_df.head())
+    
+    def LoadTowingTime(self):
+        self.towing_time_df = pd.read_excel("Data/Hangar Profile.xlsx", sheetname="Towing time", index_col=0)
+        self.towing_time_df['Towing time (hour)'] = (self.towing_time_df['Towing time (hour)']*3600).astype('float64')
+        self.towing_time_df = self.towing_time_df.set_index('Hangar Code')
+        #print(self.towing_time_df.head())
     
         
-    
-    #def LoadTowingTime(self):
-        
-    
-        
-    #def LoadSlotUtilization(self):
+    def LoadSlotUtilization(self):
+        self.slot_utlization_df = pd.read_excel("Data/Hangar Profile.xlsx", sheetname="Effective Slot", index_col=0)
+        self.slot_utlization_df = self.slot_utilization_df.set_index('Hangar Code')
+        #print(slot_utlization_df.head())
         
 
 
