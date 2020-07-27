@@ -4,7 +4,8 @@ from InitialData import *
 from Workshop import * 
 import sys
 import gurobipy as gp
-from gurobipy import Model
+from gurobipy import *
+import math
 import datetime
 from datetime import date
 from datetime import timedelta
@@ -153,13 +154,17 @@ tolerance_rate_var = m.addVars(I, K, D, lb=0.0, ub=GRB.INFINITY, vtype=GRB.CONTI
 #maintenance_check_status_var = m.addVars(I, K, G, D, vtype=GRB.BINARY, name='gam')
 
 #III. Set objective function
-m.setObjective(sum(violation[i][k][d] for i in I for k in K for d in D), GRB.MINIMIZE)
+m.setObjective(sum(violation_var[i][k][d] for i in I for k in K for d in D), GRB.MINIMIZE)
 #TO DO LIST: m.setObjective(minimize unused FH)
 #Example: m.setObjective(sum(buy[f]*cost[f] for f in foods), GRB.MINIMIZE)
 
 #IV. Define constraints
 #1. Constraint 1: One arc will depart from every airport(city) a
-#routing_var = []
+routing_var = []
+m.addConstr(
+    routing_var(I, F, G, D) == 1 for i in F for a in F for b in G for d in D), "node")
+    
+
 #for i in I:
 #    routing_var.append([])
 #    for a in F:
@@ -179,10 +184,6 @@ m.setObjective(sum(violation[i][k][d] for i in I for k in K for d in D), GRB.MIN
             
 #m.addConstrs(
 #    (flow.sum('*',i,j) <= capacity[i,j] for i,j in arcs), "cap")
-
-m.addConstr(
-    routing_var(I, F, G, D) == 1 for i in F for a in F for b in G for d in D), "node")
-    
 
 #m.addConstrs(
 #    (flow.sum('*',i,j) <= capacity[i,j] for i,j in arcs), "cap")

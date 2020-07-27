@@ -18,13 +18,17 @@ class MaintenanceDatabase:
                 
     def UpdateMaintenanceDuration(self, maintenance_data_df):
         for t in self.T:
+            aircraft_type = t
+            filter_by_aircraft_type = maintenance_data_df[maintenance_data_df['Type'] == aircraft_type]
             for k in self.K:
-                checks_by_t_and_k = maintenance_data_df[np.logical_and(maintenance_data_df['Type'] == t, maintenance_data_df['Letter'] == k)]
-                if(len(checks_by_t_and_k) == 0):
-                    self.maintenance[t][k].durations = np.nan
-                else:
+                checks_by_t_and_k = filter_by_aircraft_type[filter_by_aircraft_type['Letter'] == k]
+                if(len(checks_by_t_and_k) > 0):
                     for index, row in checks_by_t_and_k.iterrows():
                         self.maintenance[t][k].durations[row['Number']] = row['Duration']
+                self.maintenance[t][k].durations[-1] = 99999999
+    
+    def IsAircraftTypeHasMaintenance(self, t, k):
+        return len(self.maintenance[t][k].durations) > 0
         
 
     def LastMaintenance (self, I, T, K): #last_maintenance_status_df, MOP
